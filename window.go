@@ -102,7 +102,12 @@ func (this *Window) Repaint() {
 
 	l, err := this.buffer.ReadLines()
 	if err != nil {
-		panic(err)
+		this.panel.Erase()
+		this.panel.Print(0, 0, false, err.Error())
+		this.panel.Refresh()
+		this.buffer.Clear()
+		this.buffer.SaveLines([]string{})
+		return
 	}
 	pl := this.buffer.prev
 	y := 0

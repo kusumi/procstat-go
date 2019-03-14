@@ -10,8 +10,6 @@ import (
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/rthornton128/goncurses"
 )
 
 func usage(arg string) {
@@ -152,10 +150,7 @@ func main() {
 	sigint_ch := make(chan bool)
 	sigwinch_ch := make(chan bool)
 	c_ch := make(chan bool)
-	w_ch := make([]chan bool, len(co.v))
-	for i := range w_ch {
-		w_ch[i] = make(chan bool)
-	}
+	w_ch := make(chan bool)
 
 	go signal_handler(sigint_ch, sigwinch_ch)
 
@@ -170,7 +165,7 @@ func main() {
 				return
 			case <-sigwinch_ch:
 				dbg("signal/winch")
-				co.ParseEvent(goncurses.KEY_RESIZE)
+				co.ParseEvent(KEY_RESIZE)
 			default:
 				if co.ParseEvent(ReadIncoming()) == -1 {
 					dbg("quit")
@@ -180,7 +175,7 @@ func main() {
 		}
 	}(co, c_ch)
 
-	for i := 0; i < len(co.v); i++ {
+	for _, w := range co.v {
 		wg.Add(1)
 		go func(w *Window, exit_ch <-chan bool) {
 			defer wg.Done()
@@ -209,14 +204,12 @@ func main() {
 					w.Repaint()
 				}
 			}
-		}(co.v[i], w_ch[i])
+		}(w, w_ch)
 	}
 
 	<-sigint_ch
-	c_ch <- true
-	for i := 0; i < len(co.v); i++ {
-		w_ch[i] <- true
-	}
+	close(c_ch)
+	close(w_ch)
 
 	wg.Wait()
 

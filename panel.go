@@ -1,12 +1,8 @@
 package main
 
-import (
-	"github.com/rthornton128/goncurses"
-)
-
 type Panel struct {
 	ylen, xlen, ypos, xpos int
-	scr                    *goncurses.Window
+	scr                    *Screen
 }
 
 type Frame struct {
@@ -22,15 +18,15 @@ func (this *Panel) Init(ylen, xlen, ypos, xpos int) {
 	this.xlen = xlen
 	this.ypos = ypos
 	this.xpos = xpos
-	BkgdScreen(this.scr)
+	this.scr.Bkgd()
 }
 
 func (this *Panel) Refresh() {
-	RefreshScreen(this.scr)
+	this.scr.Refresh()
 }
 
 func (this *Panel) Erase() {
-	EraseScreen(this.scr)
+	this.scr.Erase()
 }
 
 func (this *Panel) Resize(ylen, xlen, ypos, xpos int) {
@@ -43,8 +39,8 @@ func (this *Panel) doResize(ylen, xlen, ypos, xpos int) {
 	this.xlen = xlen
 	this.ypos = ypos
 	this.xpos = xpos
-	ResizeScreen(this.scr, ylen, xlen)
-	MoveScreen(this.scr, ypos, xpos)
+	this.scr.Resize(ylen, xlen)
+	this.scr.Move(ypos, xpos)
 }
 
 func (this *Panel) SetTitle(s string) {
@@ -54,13 +50,13 @@ func (this *Panel) SetFocus(t bool) {
 }
 
 func (this *Panel) Print(y int, x int, standout bool, s string) {
-	PrintScreen(this.scr, y, x, standout, s)
+	this.scr.Print(y, x, standout, s)
 }
 
 // Frame
 func (this *Frame) Init(ylen, xlen, ypos, xpos int) {
 	this.Panel.Init(ylen, xlen, ypos, xpos)
-	BoxScreen(this.scr)
+	this.scr.Box()
 }
 
 func (this *Frame) Refresh() {
@@ -73,7 +69,7 @@ func (this *Frame) Erase() {
 
 func (this *Frame) Resize(ylen, xlen, ypos, xpos int) {
 	this.doResize(ylen, xlen, ypos, xpos)
-	BoxScreen(this.scr)
+	this.scr.Box()
 	this.PrintTitle()
 }
 

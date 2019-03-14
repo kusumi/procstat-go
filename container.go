@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-
-	"github.com/rthornton128/goncurses"
 )
 
 type Container struct {
@@ -15,7 +13,7 @@ type Container struct {
 func (this *Container) Init(args []string) {
 	this.BuildWindow()
 	for i, f := range args {
-		if _, err := os.Stat(f); err == nil {
+		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() {
 			if i < len(this.v) {
 				this.v[i].AttachBuffer(f)
 				this.bv = append(this.bv, this.v[i])
@@ -149,20 +147,20 @@ func (this *Container) AllocWindow(seq, ylen, xlen, ypos, xpos int) {
 	}
 }
 
-func KBD_CTRL(x int) int {
+func KEY_CTRL(x int) int {
 	return x & 0x1F
 }
 
 func (this *Container) ParseEvent(x int) int {
 	switch x {
-	case -1:
+	case KEY_ERR:
 		dbg("KEY_ERR")
-	case goncurses.KEY_RESIZE, KBD_CTRL('l'):
+	case KEY_RESIZE, KEY_CTRL('l'):
 		ClearTerminal()
 		this.BuildWindow()
-	case goncurses.KEY_LEFT, 'h':
+	case KEY_LEFT, 'h':
 		this.GotoPrevWindow()
-	case goncurses.KEY_RIGHT, 'l':
+	case KEY_RIGHT, 'l':
 		this.GotoNextWindow()
 	case '0':
 		this.curw.GotoHead()
@@ -170,22 +168,22 @@ func (this *Container) ParseEvent(x int) int {
 	case '$':
 		this.curw.GotoTail()
 		this.curw.Signal()
-	case goncurses.KEY_UP, 'k':
+	case KEY_UP, 'k':
 		this.curw.GotoCurrent(-1)
 		this.curw.Signal()
-	case goncurses.KEY_DOWN, 'j':
+	case KEY_DOWN, 'j':
 		this.curw.GotoCurrent(1)
 		this.curw.Signal()
-	case KBD_CTRL('B'):
+	case KEY_CTRL('B'):
 		this.curw.GotoCurrent(-GetTerminalLines())
 		this.curw.Signal()
-	case KBD_CTRL('U'):
+	case KEY_CTRL('U'):
 		this.curw.GotoCurrent(-GetTerminalLines() / 2)
 		this.curw.Signal()
-	case KBD_CTRL('F'):
+	case KEY_CTRL('F'):
 		this.curw.GotoCurrent(GetTerminalLines())
 		this.curw.Signal()
-	case KBD_CTRL('D'):
+	case KEY_CTRL('D'):
 		this.curw.GotoCurrent(GetTerminalLines() / 2)
 		this.curw.Signal()
 	}

@@ -5,9 +5,19 @@ package main
 import (
 	"fmt"
 	"time"
-
-	"github.com/rthornton128/goncurses"
 )
+
+const (
+	KEY_ERR    = -1
+	KEY_UP     = 1
+	KEY_DOWN   = 2
+	KEY_LEFT   = 3
+	KEY_RIGHT  = 4
+	KEY_RESIZE = 5
+)
+
+type Screen struct {
+}
 
 func StringToColor(arg string) int16 {
 	return -1
@@ -30,31 +40,31 @@ func ClearTerminal() {
 func FlashTerminal() {
 }
 
-func AllocScreen(ylen, xlen, ypos, xpos int) *goncurses.Window {
+func AllocScreen(ylen, xlen, ypos, xpos int) *Screen {
 	return nil
 }
 
-func DeleteScreen(scr *goncurses.Window) {
+func (this *Screen) Delete() {
 }
 
-func PrintScreen(scr *goncurses.Window, y int, x int, standout bool, s string) {
+func (this *Screen) Print(y, x int, standout bool, s string) {
 	fmt.Println(s)
 }
 
-func RefreshScreen(scr *goncurses.Window) {
+func (this *Screen) Refresh() {
 }
 
-func EraseScreen(scr *goncurses.Window) {
+func (this *Screen) Erase() {
 }
 
-func ResizeScreen(scr *goncurses.Window, ylen int, xlen int) {
+func (this *Screen) Resize(ylen, xlen int) {
 }
 
-func MoveScreen(scr *goncurses.Window, ypos int, xpos int) {
+func (this *Screen) Move(ypos, xpos int) {
 }
 
-func BoxScreen(scr *goncurses.Window) {
+func (this *Screen) Box() {
 }
 
-func BkgdScreen(scr *goncurses.Window) {
+func (this *Screen) Bkgd() {
 }

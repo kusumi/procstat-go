@@ -49,7 +49,7 @@ procstat-go (v0.1.5)
 
 ## Bug
 
-+ Terminal resizing does not work with more than one window (specific to Go version).
++ Terminal resizing does not work with more than one window (specific to procstat-go).
 
 ## Resource
 
