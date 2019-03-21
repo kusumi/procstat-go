@@ -150,7 +150,7 @@ func (this *Window) Repaint() {
 		} else {
 			siz := len(s)
 			y += siz / xlen
-			if (siz % xlen) != 0 {
+			if siz%xlen != 0 {
 				y++
 			}
 		}

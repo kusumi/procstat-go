@@ -30,7 +30,7 @@ type winsize struct {
 	ws_ypixel uint16
 }
 
-func GetTerminalInfo() *winsize {
+func GetTerminalInfo() (*winsize, syscall.Errno) {
 	ws := &winsize{}
 	ret, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
 		uintptr(syscall.Stdin),
@@ -38,30 +38,30 @@ func GetTerminalInfo() *winsize {
 		uintptr(unsafe.Pointer(ws)))
 
 	if int(ret) == -1 {
-		panic(errno)
+		return nil, errno
 	}
 
-	return ws
+	return ws, 0
 }
 
 func GetTerminalLines() int {
 	GlobalLock()
-	ws := GetTerminalInfo()
+	ws, errno := GetTerminalInfo()
 	GlobalUnlock()
 
 	ret := ws.ws_row
-	dbg("LINES", ret)
+	dbg("LINES", ret, errno)
 
 	return int(ret)
 }
 
 func GetTerminalCols() int {
 	GlobalLock()
-	ws := GetTerminalInfo()
+	ws, errno := GetTerminalInfo()
 	GlobalUnlock()
 
 	ret := ws.ws_col
-	dbg("COLS", ret)
+	dbg("LINES", ret, errno)
 
 	return int(ret)
 }

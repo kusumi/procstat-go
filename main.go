@@ -10,6 +10,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
+	"unicode"
 )
 
 func usage(arg string) {
@@ -106,12 +107,12 @@ func main() {
 
 	if opt.usage {
 		usage(os.Args[0])
-		os.Exit(1)
+		return
 	}
 
 	if *optm {
 		x := opt.sinterval
-		opt.sinterval = x / 1000
+		opt.sinterval /= 1000
 		opt.minterval = x % 1000
 	}
 	t := time.Duration(opt.sinterval)*time.Second +
@@ -126,20 +127,33 @@ func main() {
 
 	opt.layout = make([]int, 0)
 	for _, x := range *optc {
+		x = unicode.ToUpper(x)
 		if x > '0' && x <= '9' {
 			opt.layout = append(opt.layout, int(x-'0'))
 		} else if x >= 'A' && x <= 'F' {
 			opt.layout = append(opt.layout, int(x-'A'+10))
-		} else if x >= 'a' && x <= 'f' {
-			opt.layout = append(opt.layout, int(x-'a'+10))
 		} else {
 			opt.layout = append(opt.layout, -1)
 		}
 	}
 
+	if _, errno := GetTerminalInfo(); errno != 0 {
+		fmt.Fprintln(os.Stderr, "Failed to get terminal info,", errno)
+		return
+	}
+
+	defer CleanupLock()
 	InitLock()
-	InitLog()
-	InitScreen(opt.fgcolor, opt.bgcolor)
+	defer CleanupLog()
+	if err := InitLog(); err != nil {
+		fmt.Fprintln(os.Stderr, "Failed to init log,", err)
+		return
+	}
+	defer CleanupScreen()
+	if err := InitScreen(opt.fgcolor, opt.bgcolor); err != nil {
+		fmt.Fprintln(os.Stderr, "Failed to init screen,", err)
+		return
+	}
 
 	dbg(os.Args)
 	dbgf("%#v", opt)
@@ -180,9 +194,12 @@ func main() {
 		go func(w *Window, exit_ch <-chan bool) {
 			defer wg.Done()
 			w.Repaint()
+			d := t
 			if opt.usedelay {
 				r := rand.Intn(1000)
-				d := time.Duration(r) * time.Millisecond
+				d = time.Duration(r) * time.Millisecond
+			}
+			for {
 				select {
 				case <-exit_ch:
 					dbgf("window=%p exit", w)
@@ -192,17 +209,7 @@ func main() {
 				case <-time.After(d):
 					w.Repaint()
 				}
-			}
-			for {
-				select {
-				case <-exit_ch:
-					dbgf("window=%p exit", w)
-					return
-				case <-w.sig_ch:
-					w.Repaint()
-				case <-time.After(t):
-					w.Repaint()
-				}
+				d = t
 			}
 		}(w, w_ch)
 	}
@@ -212,8 +219,4 @@ func main() {
 	close(w_ch)
 
 	wg.Wait()
-
-	CleanupScreen()
-	CleanupLog()
-	CleanupLock()
 }

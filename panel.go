@@ -14,11 +14,15 @@ type Frame struct {
 // Panel
 func (this *Panel) Init(ylen, xlen, ypos, xpos int) {
 	this.scr = AllocScreen(ylen, xlen, ypos, xpos)
+	this.setYX(ylen, xlen, ypos, xpos)
+	this.scr.Bkgd()
+}
+
+func (this *Panel) setYX(ylen, xlen, ypos, xpos int) {
 	this.ylen = ylen
 	this.xlen = xlen
 	this.ypos = ypos
 	this.xpos = xpos
-	this.scr.Bkgd()
 }
 
 func (this *Panel) Refresh() {
@@ -35,10 +39,7 @@ func (this *Panel) Resize(ylen, xlen, ypos, xpos int) {
 }
 
 func (this *Panel) doResize(ylen, xlen, ypos, xpos int) {
-	this.ylen = ylen
-	this.xlen = xlen
-	this.ypos = ypos
-	this.xpos = xpos
+	this.setYX(ylen, xlen, ypos, xpos)
 	this.scr.Resize(ylen, xlen)
 	this.scr.Move(ypos, xpos)
 }

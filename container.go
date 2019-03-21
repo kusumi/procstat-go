@@ -7,7 +7,7 @@ import (
 
 type Container struct {
 	v, bv []*Window
-	curw  *Window
+	cw    *Window
 }
 
 func (this *Container) Init(args []string) {
@@ -22,20 +22,20 @@ func (this *Container) Init(args []string) {
 	}
 
 	Assert(len(this.v) > 0)
-	this.curw = this.v[0]
-	this.curw.Focus(true)
+	this.cw = this.v[0]
+	this.cw.Focus(true)
 }
 
 func (this *Container) GotoNextWindow() {
-	this.curw.Focus(false)
+	this.cw.Focus(false)
 	for i, w := range this.bv {
-		if w == this.curw {
+		if w == this.cw {
 			if i == len(this.bv)-1 {
-				this.curw = this.bv[0]
+				this.cw = this.bv[0]
 			} else {
-				this.curw = this.bv[i+1]
+				this.cw = this.bv[i+1]
 			}
-			this.curw.Focus(true)
+			this.cw.Focus(true)
 			return
 		}
 	}
@@ -43,15 +43,15 @@ func (this *Container) GotoNextWindow() {
 }
 
 func (this *Container) GotoPrevWindow() {
-	this.curw.Focus(false)
+	this.cw.Focus(false)
 	for i, w := range this.bv {
-		if w == this.curw {
+		if w == this.cw {
 			if i == 0 {
-				this.curw = this.bv[len(this.bv)-1]
+				this.cw = this.bv[len(this.bv)-1]
 			} else {
-				this.curw = this.bv[i-1]
+				this.cw = this.bv[i-1]
 			}
-			this.curw.Focus(true)
+			this.cw.Focus(true)
 			return
 		}
 	}
@@ -163,29 +163,29 @@ func (this *Container) ParseEvent(x int) int {
 	case KEY_RIGHT, 'l':
 		this.GotoNextWindow()
 	case '0':
-		this.curw.GotoHead()
-		this.curw.Signal()
+		this.cw.GotoHead()
+		this.cw.Signal()
 	case '$':
-		this.curw.GotoTail()
-		this.curw.Signal()
+		this.cw.GotoTail()
+		this.cw.Signal()
 	case KEY_UP, 'k':
-		this.curw.GotoCurrent(-1)
-		this.curw.Signal()
+		this.cw.GotoCurrent(-1)
+		this.cw.Signal()
 	case KEY_DOWN, 'j':
-		this.curw.GotoCurrent(1)
-		this.curw.Signal()
+		this.cw.GotoCurrent(1)
+		this.cw.Signal()
 	case KEY_CTRL('B'):
-		this.curw.GotoCurrent(-GetTerminalLines())
-		this.curw.Signal()
+		this.cw.GotoCurrent(-GetTerminalLines())
+		this.cw.Signal()
 	case KEY_CTRL('U'):
-		this.curw.GotoCurrent(-GetTerminalLines() / 2)
-		this.curw.Signal()
+		this.cw.GotoCurrent(-GetTerminalLines() / 2)
+		this.cw.Signal()
 	case KEY_CTRL('F'):
-		this.curw.GotoCurrent(GetTerminalLines())
-		this.curw.Signal()
+		this.cw.GotoCurrent(GetTerminalLines())
+		this.cw.Signal()
 	case KEY_CTRL('D'):
-		this.curw.GotoCurrent(GetTerminalLines() / 2)
-		this.curw.Signal()
+		this.cw.GotoCurrent(GetTerminalLines() / 2)
+		this.cw.Signal()
 	}
 
 	return 0

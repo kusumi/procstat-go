@@ -49,36 +49,36 @@ func StringToColor(arg string) int16 {
 	return -1 // default color
 }
 
-func InitScreen(fg, bg int16) {
+func InitScreen(fg, bg int16) error {
 	scr, err := goncurses.Init()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	stdscr = &Screen{scr}
 
 	if err := goncurses.Cursor(0); err != nil {
-		panic(err)
+		return err
 	}
 
 	goncurses.Echo(false)
 	goncurses.CBreak(true)
 
 	if err := stdscr.Keypad(true); err != nil {
-		panic(err)
+		return err
 	}
 
 	stdscr.Timeout(200)
 	ClearTerminal()
 
-	if goncurses.HasColors() == true {
+	if goncurses.HasColors() {
 		if err := goncurses.StartColor(); err != nil {
-			panic(err)
+			return err
 		}
 		if err := goncurses.UseDefaultColors(); err != nil {
-			panic(err)
+			return err
 		}
 		if err := goncurses.InitPair(1, fg, bg); err != nil {
-			panic(err)
+			return err
 		}
 		color_attr = goncurses.ColorPair(1)
 	}
@@ -88,14 +88,17 @@ func InitScreen(fg, bg int16) {
 	} else {
 		standout_attr = goncurses.A_STANDOUT
 	}
+
+	return nil
 }
 
-func CleanupScreen() {
+func CleanupScreen() error {
 	if err := goncurses.Cursor(1); err != nil {
-		panic(err)
+		return err
 	}
-
 	goncurses.End()
+
+	return nil
 }
 
 func ReadIncoming() int {

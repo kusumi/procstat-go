@@ -23,7 +23,8 @@ func StringToColor(arg string) int16 {
 	return -1
 }
 
-func InitScreen(fg, bg int16) {
+func InitScreen(fg, bg int16) error {
+	return nil
 }
 
 func CleanupScreen() {

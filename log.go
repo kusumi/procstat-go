@@ -13,30 +13,30 @@ var (
 	lfd   *os.File
 )
 
-func InitLog() {
+func InitLog() error {
 	if !opt.debug {
-		return
+		return nil
 	}
 
 	u, err := user.Current()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	f := path.Join(u.HomeDir, ".procstat.log")
 	lfd, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
-	GlobalLock()
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.SetOutput(lfd)
-	GlobalUnlock()
 
 	linit = true
 	dbg(strings.Repeat("=", 20))
-	dbg(f, lfd)
+	dbg(lfd.Name())
+
+	return nil
 }
 
 func CleanupLog() {
@@ -44,10 +44,7 @@ func CleanupLog() {
 		return
 	}
 
-	GlobalLock()
 	lfd.Close()
-	GlobalUnlock()
-
 	linit = false
 }
 
