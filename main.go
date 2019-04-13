@@ -6,11 +6,14 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 	"unicode"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 func usage(arg string) {
@@ -58,6 +61,11 @@ func signal_handler(sigint_ch, sigwinch_ch chan<- bool) {
 			sigwinch_ch <- true
 		}
 	}
+}
+
+type Watch struct {
+	watcher *fsnotify.Watcher
+	fmap    map[string]*Window
 }
 
 type Option struct {
@@ -155,27 +163,35 @@ func main() {
 		return
 	}
 
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Failed to init fsnotify,", err)
+		return
+	}
+	defer watcher.Close()
+	watch := &Watch{watcher, make(map[string]*Window)}
+
 	dbg(os.Args)
 	dbgf("%#v", opt)
 
 	co := new(Container)
-	co.Init(args)
+	co.Init(args, watch)
+	dbg(watch.fmap)
 
 	sigint_ch := make(chan bool)
 	sigwinch_ch := make(chan bool)
-	c_ch := make(chan bool)
-	w_ch := make(chan bool)
+	exit_ch := make(chan bool)
 
 	go signal_handler(sigint_ch, sigwinch_ch)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
-	go func(co *Container, exit_ch <-chan bool) {
+	go func() {
 		defer wg.Done()
 		for {
 			select {
 			case <-exit_ch:
-				dbg("exit")
+				dbgf("co=%p exit", co)
 				return
 			case <-sigwinch_ch:
 				dbg("signal/winch")
@@ -187,11 +203,41 @@ func main() {
 				}
 			}
 		}
-	}(co, c_ch)
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for {
+			select {
+			case <-exit_ch:
+				dbgf("watch=%p exit", watch)
+				return
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				dbg(event)
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					abs, _ := filepath.Abs(event.Name)
+					if w, ok := watch.fmap[abs]; ok {
+						w.UpdateBuffer()
+					} else {
+						dbg("No such key", abs)
+					}
+				}
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				dbgf("watch=%p error", watch, err)
+			}
+		}
+	}()
 
 	for _, w := range co.v {
 		wg.Add(1)
-		go func(w *Window, exit_ch <-chan bool) {
+		go func(w *Window) {
 			defer wg.Done()
 			w.Repaint()
 			d := t
@@ -211,12 +257,11 @@ func main() {
 				}
 				d = t
 			}
-		}(w, w_ch)
+		}(w)
 	}
 
 	<-sigint_ch
-	close(c_ch)
-	close(w_ch)
+	close(exit_ch)
 
 	wg.Wait()
 }

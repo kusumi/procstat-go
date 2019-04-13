@@ -40,6 +40,21 @@ func (this *Buffer) IsDead() bool {
 	return this.fd == nil
 }
 
+func (this *Buffer) Update() {
+	if this.IsDead() {
+		return
+	}
+	this.BlockTillReady()
+	tmp, _ := this.fd.Seek(0, 1)
+	this.fd.Seek(0, 0)
+	l, err := this.ReadLines()
+	if err == nil {
+		this.SaveLines(l)
+	}
+	this.fd.Seek(tmp, 0)
+	this.SignalBlocked()
+}
+
 func (this *Buffer) ReadLines() ([]string, error) {
 	var ret []string
 

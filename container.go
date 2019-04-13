@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 type Container struct {
@@ -10,13 +11,20 @@ type Container struct {
 	cw    *Window
 }
 
-func (this *Container) Init(args []string) {
+func (this *Container) Init(args []string, watch *Watch) {
 	this.BuildWindow()
 	for i, f := range args {
 		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() {
 			if i < len(this.v) {
 				this.v[i].AttachBuffer(f)
 				this.bv = append(this.bv, this.v[i])
+
+				abs, _ := filepath.Abs(f)
+				if err := watch.watcher.Add(abs); err == nil {
+					watch.fmap[abs] = this.v[i]
+				} else {
+					dbg("Failed to watch", abs, err)
+				}
 			}
 		}
 	}

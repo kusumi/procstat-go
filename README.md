@@ -13,6 +13,8 @@ procstat-go (v0.1.5)
 
 + github.com/rthornton128/goncurses
 
++ github.com/fsnotify/fsnotify
+
 ## Build
 
         $ make

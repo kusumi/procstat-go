@@ -64,6 +64,11 @@ func (this *Window) AttachBuffer(f string) {
 	this.Unlock()
 }
 
+func (this *Window) UpdateBuffer() {
+	dbgf("window=%p path=%s", this, this.buffer.f)
+	this.buffer.Update()
+}
+
 func (this *Window) Focus(t bool) {
 	this.Lock()
 	this.frame.SetFocus(t)
