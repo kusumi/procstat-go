@@ -46,23 +46,6 @@ Commands:
 	fmt.Fprintln(os.Stderr, s)
 }
 
-func signal_handler(sigint_ch, sigwinch_ch chan<- bool) {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, syscall.SIGINT)
-	signal.Notify(c, syscall.SIGWINCH)
-
-	for signal := range c {
-		switch signal {
-		case syscall.SIGINT:
-			dbg("SIGINT")
-			sigint_ch <- true
-		case syscall.SIGWINCH:
-			dbg("SIGWINCH")
-			sigwinch_ch <- true
-		}
-	}
-}
-
 type Watch struct {
 	watcher *fsnotify.Watcher
 	fmap    map[string]*Window
@@ -182,9 +165,32 @@ func main() {
 	sigwinch_ch := make(chan bool)
 	exit_ch := make(chan bool)
 
-	go signal_handler(sigint_ch, sigwinch_ch)
-
 	var wg sync.WaitGroup
+
+	// signal handler goroutine
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		ch := make(chan os.Signal, 1)
+		signal.Notify(ch, syscall.SIGINT, syscall.SIGWINCH)
+		for {
+			select {
+			case <-exit_ch:
+				dbgf("signal=%p exit", ch)
+				return
+			case s := <-ch:
+				dbg("signal,", s)
+				switch s {
+				case syscall.SIGINT:
+					sigint_ch <- true
+				case syscall.SIGWINCH:
+					sigwinch_ch <- true
+				}
+			}
+		}
+	}()
+
+	// container goroutine
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -194,7 +200,6 @@ func main() {
 				dbgf("co=%p exit", co)
 				return
 			case <-sigwinch_ch:
-				dbg("signal/winch")
 				co.ParseEvent(KEY_RESIZE)
 			default:
 				if co.ParseEvent(ReadIncoming()) == -1 {
@@ -205,6 +210,7 @@ func main() {
 		}
 	}()
 
+	// watch goroutine
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -235,6 +241,7 @@ func main() {
 		}
 	}()
 
+	// window goroutines
 	for _, w := range co.v {
 		wg.Add(1)
 		go func(w *Window) {
