@@ -10,7 +10,7 @@ type Window struct {
 	panel  *Panel
 	buffer *Buffer
 	offset int
-	sig_ch chan bool
+	sig_ch chan int
 	mtx    sync.Mutex
 }
 
@@ -23,11 +23,11 @@ func (this *Window) Init(ylen, xlen, ypos, xpos int) {
 	this.panel.Refresh()
 
 	this.offset = 0
-	this.sig_ch = make(chan bool)
+	this.sig_ch = make(chan int)
 }
 
 func (this *Window) Signal() {
-	this.sig_ch <- true
+	this.sig_ch <- 1
 }
 
 func (this *Window) Lock() {

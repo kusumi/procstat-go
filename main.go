@@ -17,7 +17,7 @@ import (
 )
 
 func usage(arg string) {
-	s := "Usage: " + arg + " [options] /proc/...\n" +
+	fmt.Fprintln(os.Stderr, "Usage: "+arg+" [options] /proc/...\n"+
 		`Options:
   -c <arg> - Set column layout. e.g. "-c 123" to make 3 columns with 1,2,3 windows for each
   -t <arg> - Set refresh interval in second. Default is 1. e.g. "-t 5" to refresh screen every 5 seconds
@@ -42,8 +42,7 @@ Commands:
   CTRL-u - Scroll half page upward
   CTRL-f - Scroll one page downward
   CTRL-d - Scroll half page downward
-  CTRL-l - Repaint whole screen`
-	fmt.Fprintln(os.Stderr, s)
+  CTRL-l - Repaint whole screen`)
 }
 
 type Watch struct {
@@ -106,8 +105,7 @@ func main() {
 		opt.sinterval /= 1000
 		opt.minterval = x % 1000
 	}
-	t := time.Duration(opt.sinterval)*time.Second +
-		time.Duration(opt.minterval)*time.Millisecond
+	t := GetSecond(opt.sinterval) + GetMillisecond(opt.minterval)
 
 	if *optc == "" {
 		*optc = strings.Repeat("1", len(args))
@@ -161,9 +159,9 @@ func main() {
 	co.Init(args, watch)
 	dbg(watch.fmap)
 
-	sigint_ch := make(chan bool)
-	sigwinch_ch := make(chan bool)
-	exit_ch := make(chan bool)
+	sigint_ch := make(chan int)
+	sigwinch_ch := make(chan int)
+	exit_ch := make(chan int)
 
 	var wg sync.WaitGroup
 
@@ -182,9 +180,9 @@ func main() {
 				dbg("signal,", s)
 				switch s {
 				case syscall.SIGINT:
-					sigint_ch <- true
+					sigint_ch <- 1
 				case syscall.SIGWINCH:
-					sigwinch_ch <- true
+					sigwinch_ch <- 1
 				}
 			}
 		}
@@ -204,7 +202,7 @@ func main() {
 			default:
 				if co.ParseEvent(ReadIncoming()) == -1 {
 					dbg("quit")
-					sigint_ch <- true
+					sigint_ch <- 1
 				}
 			}
 		}
@@ -249,8 +247,7 @@ func main() {
 			w.Repaint()
 			d := t
 			if opt.usedelay {
-				r := rand.Intn(1000)
-				d = time.Duration(r) * time.Millisecond
+				d = GetMillisecond(rand.Intn(1000))
 			}
 			for {
 				select {

@@ -9,7 +9,7 @@ type Buffer struct {
 	f    string
 	fd   *os.File
 	prev []string
-	l_ch chan bool
+	l_ch chan int
 }
 
 func (this *Buffer) Init(f string) {
@@ -20,8 +20,8 @@ func (this *Buffer) Init(f string) {
 	}
 
 	this.prev = []string{}
-	this.l_ch = make(chan bool, 1)
-	this.l_ch <- true
+	this.l_ch = make(chan int, 1)
+	this.l_ch <- 1
 }
 
 func (this *Buffer) BlockTillReady() {
@@ -29,7 +29,7 @@ func (this *Buffer) BlockTillReady() {
 }
 
 func (this *Buffer) SignalBlocked() {
-	this.l_ch <- true
+	this.l_ch <- 1
 }
 
 func (this *Buffer) GetMaxLine() int {

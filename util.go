@@ -2,13 +2,14 @@ package main
 
 import (
 	"syscall"
+	"time"
 	"unsafe"
 )
 
-var gl_ch = make(chan bool, 1)
+var gl_ch = make(chan int, 1)
 
 func InitLock() {
-	gl_ch <- true
+	gl_ch <- 1
 }
 
 func CleanupLock() {
@@ -20,7 +21,7 @@ func GlobalLock() {
 }
 
 func GlobalUnlock() {
-	gl_ch <- true
+	gl_ch <- 1
 }
 
 type winsize struct {
@@ -64,6 +65,14 @@ func GetTerminalCols() int {
 	dbg("LINES", ret, errno)
 
 	return int(ret)
+}
+
+func GetSecond(t int) time.Duration {
+	return time.Duration(t) * time.Second
+}
+
+func GetMillisecond(t int) time.Duration {
+	return time.Duration(t) * time.Millisecond
 }
 
 func Assert(c bool) {
