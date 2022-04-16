@@ -1,3 +1,4 @@
+//go:build stdout
 // +build stdout
 
 package main
