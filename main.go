@@ -50,7 +50,7 @@ type Watch struct {
 	fmap    map[string]*Window
 }
 
-type Option struct {
+var opt = struct {
 	layout    []int
 	sinterval int
 	minterval int
@@ -63,9 +63,7 @@ type Option struct {
 	bgcolor   int16
 	blinkline bool
 	usedelay  bool
-}
-
-var opt Option
+}{}
 
 func main() {
 	optc := flag.String("c", "", "")
@@ -97,7 +95,7 @@ func main() {
 
 	if opt.usage {
 		usage(os.Args[0])
-		return
+		os.Exit(1)
 	}
 
 	if *optm {
@@ -128,7 +126,7 @@ func main() {
 
 	if _, errno := GetTerminalInfo(); errno != 0 {
 		fmt.Fprintln(os.Stderr, "Failed to get terminal info,", errno)
-		return
+		os.Exit(1)
 	}
 
 	defer CleanupLock()
@@ -136,18 +134,18 @@ func main() {
 	defer CleanupLog()
 	if err := InitLog(); err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to init log,", err)
-		return
+		os.Exit(1)
 	}
 	defer CleanupScreen()
 	if err := InitScreen(opt.fgcolor, opt.bgcolor); err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to init screen,", err)
-		return
+		os.Exit(1)
 	}
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to init fsnotify,", err)
-		return
+		os.Exit(1)
 	}
 	defer watcher.Close()
 	watch := &Watch{watcher, make(map[string]*Window)}
