@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -16,8 +17,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func usage(arg string) {
-	fmt.Fprintln(os.Stderr, "Usage: "+arg+" [options] /proc/...\n"+
+func usage(progname string) {
+	fmt.Fprintln(os.Stderr, "Usage: "+progname+" [options] /proc/...\n"+
 		`Options:
   -c <arg> - Set column layout. e.g. "-c 123" to make 3 columns with 1,2,3 windows for each
   -t <arg> - Set refresh interval in second. Default is 1. e.g. "-t 5" to refresh screen every 5 seconds
@@ -66,6 +67,8 @@ var opt = struct {
 }{}
 
 func main() {
+	progname := path.Base(os.Args[0])
+
 	optc := flag.String("c", "", "")
 	optt := flag.Int("t", 1, "")
 	optm := flag.Bool("m", false, "")
@@ -94,7 +97,7 @@ func main() {
 	opt.usedelay = *optusedelay
 
 	if opt.usage {
-		usage(os.Args[0])
+		usage(progname)
 		os.Exit(1)
 	}
 
@@ -157,7 +160,6 @@ func main() {
 	co.Init(args, watch)
 	dbg(watch.fmap)
 
-	sigint_ch := make(chan int)
 	sigwinch_ch := make(chan int)
 	exit_ch := make(chan int)
 
@@ -178,7 +180,7 @@ func main() {
 				dbg("signal,", s)
 				switch s {
 				case syscall.SIGINT:
-					sigint_ch <- 1
+					exit_ch <- 1
 				case syscall.SIGWINCH:
 					sigwinch_ch <- 1
 				}
@@ -200,7 +202,7 @@ func main() {
 			default:
 				if co.ParseEvent(ReadIncoming()) == -1 {
 					dbg("quit")
-					sigint_ch <- 1
+					exit_ch <- 1
 				}
 			}
 		}
@@ -232,7 +234,7 @@ func main() {
 				if !ok {
 					return
 				}
-				dbgf("watch=%p error", watch, err)
+				dbgf("watch=%p error=%s", watch, err)
 			}
 		}
 	}()
@@ -262,7 +264,7 @@ func main() {
 		}(w)
 	}
 
-	<-sigint_ch
+	<-exit_ch
 	close(exit_ch)
 
 	wg.Wait()

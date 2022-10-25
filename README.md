@@ -1,4 +1,4 @@
-procstat-go (v0.1.5)
+procstat-go ([v0.2.0](https://github.com/kusumi/procstat-go/releases/tag/v0.2.0))
 ========
 
 ## About
@@ -11,18 +11,24 @@ procstat-go (v0.1.5)
 
 ## Requirements
 
++ go 1.18 or above
+
 + github.com/rthornton128/goncurses
 
 + github.com/fsnotify/fsnotify
 
 ## Build
 
-        $ make
+    $ make
+
+or
+
+    $ gmake
 
 ## Usage
 
-    $ ./procstat -h
-    Usage: ./procstat [options] /proc/...
+    $ ./procstat-go -h
+    Usage: procstat-go [options] /proc/...
     Options:
       -c <arg> - Set column layout. e.g. "-c 123" to make 3 columns with 1,2,3 windows for each
       -t <arg> - Set refresh interval in second. Default is 1. e.g. "-t 5" to refresh screen every 5 seconds
@@ -48,10 +54,6 @@ procstat-go (v0.1.5)
       CTRL-f - Scroll one page downward
       CTRL-d - Scroll half page downward
       CTRL-l - Repaint whole screen
-
-## Bug
-
-+ Terminal resizing does not work with more than one window (specific to procstat-go).
 
 ## Resource
 

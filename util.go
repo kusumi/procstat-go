@@ -52,6 +52,9 @@ func GetTerminalLines() int {
 
 	ret := ws.ws_row
 	dbg("LINES", ret, errno)
+	if errno != 0 {
+		panic(errno)
+	}
 
 	return int(ret)
 }
@@ -62,7 +65,10 @@ func GetTerminalCols() int {
 	GlobalUnlock()
 
 	ret := ws.ws_col
-	dbg("LINES", ret, errno)
+	dbg("COLS", ret, errno)
+	if errno != 0 {
+		panic(errno)
+	}
 
 	return int(ret)
 }
@@ -76,7 +82,11 @@ func GetMillisecond(t int) time.Duration {
 }
 
 func Assert(c bool) {
+	Kassert(c, "Assert failed")
+}
+
+func Kassert(c bool, err interface{}) {
 	if !c {
-		panic("Assertion")
+		panic(err)
 	}
 }

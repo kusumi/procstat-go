@@ -24,7 +24,7 @@ func InitLog() error {
 	}
 
 	f := path.Join(u.HomeDir, ".procstat.log")
-	lfd, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	lfd, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return err
 	}

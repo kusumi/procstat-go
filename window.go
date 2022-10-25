@@ -2,7 +2,6 @@ package main
 
 import (
 	"strconv"
-	"sync"
 )
 
 type Window struct {
@@ -11,7 +10,7 @@ type Window struct {
 	buffer *Buffer
 	offset int
 	sig_ch chan int
-	mtx    sync.Mutex
+	mtx_ch chan int
 }
 
 func (this *Window) Init(ylen, xlen, ypos, xpos int) {
@@ -24,6 +23,8 @@ func (this *Window) Init(ylen, xlen, ypos, xpos int) {
 
 	this.offset = 0
 	this.sig_ch = make(chan int)
+	this.mtx_ch = make(chan int, 1)
+	this.mtx_ch <- 1
 }
 
 func (this *Window) Signal() {
@@ -31,11 +32,11 @@ func (this *Window) Signal() {
 }
 
 func (this *Window) Lock() {
-	this.mtx.Lock()
+	<-this.mtx_ch
 }
 
 func (this *Window) Unlock() {
-	this.mtx.Unlock()
+	this.mtx_ch <- 1
 }
 
 func (this *Window) IsDead() bool {

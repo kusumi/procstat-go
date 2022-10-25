@@ -46,12 +46,12 @@ func (this *Buffer) Update() {
 	}
 	this.BlockTillReady()
 	tmp, _ := this.fd.Seek(0, 1)
-	this.fd.Seek(0, 0)
+	_, _ = this.fd.Seek(0, 0)
 	l, err := this.ReadLines()
 	if err == nil {
 		this.SaveLines(l)
 	}
-	this.fd.Seek(tmp, 0)
+	_, _ = this.fd.Seek(tmp, 0)
 	this.SignalBlocked()
 }
 
@@ -71,5 +71,5 @@ func (this *Buffer) SaveLines(l []string) {
 }
 
 func (this *Buffer) Clear() {
-	this.fd.Seek(0, 0)
+	_, _ = this.fd.Seek(0, 0)
 }

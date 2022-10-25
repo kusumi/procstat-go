@@ -155,10 +155,6 @@ func (this *Container) AllocWindow(seq, ylen, xlen, ypos, xpos int) {
 	}
 }
 
-func KEY_CTRL(x int) int {
-	return x & 0x1F
-}
-
 func (this *Container) ParseEvent(x int) int {
 	switch x {
 	case KEY_ERR:

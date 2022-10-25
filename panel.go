@@ -39,7 +39,10 @@ func (this *Panel) Resize(ylen, xlen, ypos, xpos int) {
 }
 
 func (this *Panel) doResize(ylen, xlen, ypos, xpos int) {
-	this.setYX(ylen, xlen, ypos, xpos)
+	// XXX goncurses resize only works with new window allocation
+	//this.setYX(ylen, xlen, ypos, xpos)
+	this.Init(ylen, xlen, ypos, xpos)
+
 	this.scr.Resize(ylen, xlen)
 	this.scr.Move(ypos, xpos)
 }

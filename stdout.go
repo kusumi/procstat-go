@@ -1,5 +1,4 @@
 //go:build stdout
-// +build stdout
 
 package main
 
@@ -7,6 +6,9 @@ import (
 	"fmt"
 	"time"
 )
+
+type Screen struct {
+}
 
 const (
 	KEY_ERR    = -1
@@ -17,7 +19,8 @@ const (
 	KEY_RESIZE = 5
 )
 
-type Screen struct {
+func KEY_CTRL(x int) int {
+	return x & 0x1F
 }
 
 func StringToColor(arg string) int16 {

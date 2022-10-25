@@ -1,9 +1,13 @@
 all:
-	go build -o procstat
+	go build -o procstat-go
 stdout:
-	go build -o procstat -tags stdout
+	go build -o procstat-go -tags stdout
 fmt:
 	go fmt
 clean:
 	go clean
-	rm ./procstat
+
+lint:
+	golangci-lint run
+lint-stdout:
+	golangci-lint run --build-tags stdout

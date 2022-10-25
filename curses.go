@@ -1,5 +1,4 @@
 //go:build !stdout
-// +build !stdout
 
 package main
 
@@ -27,6 +26,10 @@ const (
 	KEY_RIGHT  = goncurses.KEY_RIGHT
 	KEY_RESIZE = goncurses.KEY_RESIZE
 )
+
+func KEY_CTRL(x int) int {
+	return x & 0x1F
+}
 
 func StringToColor(arg string) int16 {
 	switch arg {
@@ -93,13 +96,11 @@ func InitScreen(fg, bg int16) error {
 	return nil
 }
 
-func CleanupScreen() error {
+func CleanupScreen() {
 	if err := goncurses.Cursor(1); err != nil {
-		return err
+		return
 	}
 	goncurses.End()
-
-	return nil
 }
 
 func ReadIncoming() int {
@@ -138,7 +139,7 @@ func AllocScreen(ylen, xlen, ypos, xpos int) *Screen {
 
 func (this *Screen) Delete() {
 	GlobalLock()
-	this.Window.Delete()
+	_ = this.Window.Delete()
 	GlobalUnlock()
 }
 
@@ -148,9 +149,9 @@ func (this *Screen) Print(y, x int, standout bool, s string) {
 	if !standout {
 		attr = goncurses.A_NORMAL
 	}
-	this.Window.AttrOn(attr)
+	_ = this.Window.AttrOn(attr)
 	this.Window.MovePrint(y, x, s)
-	this.Window.AttrOff(attr)
+	_ = this.Window.AttrOff(attr)
 	GlobalUnlock()
 }
 
