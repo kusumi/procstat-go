@@ -5,17 +5,15 @@ import (
 )
 
 type Window struct {
-	frame  *Frame
-	panel  *Panel
-	buffer *Buffer
+	frame  Frame
+	panel  Panel
+	buffer Buffer
 	offset int
 	sig_ch chan int
 	mtx_ch chan int
 }
 
 func (this *Window) Init(ylen, xlen, ypos, xpos int) {
-	this.frame = new(Frame)
-	this.panel = new(Panel)
 	this.frame.Init(ylen, xlen, ypos, xpos)
 	this.panel.Init(ylen-2, xlen-2, ypos+1, xpos+1)
 	this.frame.Refresh()
@@ -40,7 +38,7 @@ func (this *Window) Unlock() {
 }
 
 func (this *Window) IsDead() bool {
-	return this.buffer == nil || this.buffer.IsDead()
+	return this.buffer.IsDead()
 }
 
 func (this *Window) Resize(ylen, xlen, ypos, xpos int) {
@@ -52,14 +50,13 @@ func (this *Window) Resize(ylen, xlen, ypos, xpos int) {
 
 func (this *Window) AttachBuffer(f string) {
 	this.Lock()
-	if this.buffer != nil {
+	if this.buffer.fd != nil {
 		this.Unlock()
 		return
 	}
 	this.frame.SetTitle(f)
 	this.panel.SetTitle(f)
 
-	this.buffer = new(Buffer)
 	this.buffer.Init(f)
 	dbgf("window=%p path=%s", this, this.buffer.f)
 	this.Unlock()

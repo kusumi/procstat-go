@@ -151,15 +151,16 @@ func main() {
 		os.Exit(1)
 	}
 	defer watcher.Close()
-	watch := &Watch{watcher, make(map[string]*Window)}
+	watch := Watch{watcher, make(map[string]*Window)}
 
 	dbg(os.Args)
 	dbgf("%#v", opt)
 
-	co := new(Container)
-	co.Init(args, watch)
+	co := Container{}
+	co.Init(args, &watch)
 	dbg(watch.fmap)
 
+	sigint_ch := make(chan int)
 	sigwinch_ch := make(chan int)
 	exit_ch := make(chan int)
 
@@ -180,7 +181,7 @@ func main() {
 				dbg("signal,", s)
 				switch s {
 				case syscall.SIGINT:
-					exit_ch <- 1
+					sigint_ch <- 1
 				case syscall.SIGWINCH:
 					sigwinch_ch <- 1
 				}
@@ -202,7 +203,7 @@ func main() {
 			default:
 				if co.ParseEvent(ReadIncoming()) == -1 {
 					dbg("quit")
-					exit_ch <- 1
+					sigint_ch <- 1
 				}
 			}
 		}
@@ -264,7 +265,7 @@ func main() {
 		}(w)
 	}
 
-	<-exit_ch
+	<-sigint_ch
 	close(exit_ch)
 
 	wg.Wait()

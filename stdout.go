@@ -45,8 +45,8 @@ func ClearTerminal() {
 func FlashTerminal() {
 }
 
-func AllocScreen(ylen, xlen, ypos, xpos int) *Screen {
-	return nil
+func AllocScreen(ylen, xlen, ypos, xpos int) Screen {
+	return Screen{}
 }
 
 func (this *Screen) Delete() {

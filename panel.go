@@ -2,7 +2,7 @@ package main
 
 type Panel struct {
 	ylen, xlen, ypos, xpos int
-	scr                    *Screen
+	scr                    Screen
 }
 
 type Frame struct {

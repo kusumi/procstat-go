@@ -13,7 +13,7 @@ type Screen struct {
 }
 
 var (
-	stdscr        *Screen
+	stdscr        Screen
 	color_attr    goncurses.Char = goncurses.A_NORMAL
 	standout_attr goncurses.Char = goncurses.A_NORMAL
 )
@@ -58,7 +58,7 @@ func InitScreen(fg, bg int16) error {
 	if err != nil {
 		return err
 	}
-	stdscr = &Screen{scr}
+	stdscr = Screen{scr}
 
 	if err := goncurses.Cursor(0); err != nil {
 		return err
@@ -120,7 +120,7 @@ func FlashTerminal() {
 	goncurses.Flash()
 }
 
-func AllocScreen(ylen, xlen, ypos, xpos int) *Screen {
+func AllocScreen(ylen, xlen, ypos, xpos int) Screen {
 	GlobalLock()
 	scr, err := goncurses.NewWindow(ylen, xlen, ypos, xpos)
 	if err != nil {
@@ -134,7 +134,7 @@ func AllocScreen(ylen, xlen, ypos, xpos int) *Screen {
 	}
 	GlobalUnlock()
 
-	return &Screen{scr}
+	return Screen{scr}
 }
 
 func (this *Screen) Delete() {
