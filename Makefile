@@ -11,3 +11,6 @@ lint:
 	golangci-lint run
 lint-stdout:
 	golangci-lint run --build-tags stdout
+
+xxx1:	fmt lint
+xxx2:	fmt lint-stdout

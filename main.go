@@ -17,22 +17,23 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-func usage(progname string) {
-	fmt.Fprintln(os.Stderr, "Usage: "+progname+" [options] /proc/...\n"+
-		`Options:
-  -c <arg> - Set column layout. e.g. "-c 123" to make 3 columns with 1,2,3 windows for each
-  -t <arg> - Set refresh interval in second. Default is 1. e.g. "-t 5" to refresh screen every 5 seconds
-  -m - Take refresh interval as milli second. e.g. "-t 500 -m" to refresh screen every 500 milli seconds
-  -n - Show line number
-  -f - Fold lines when longer than window width
-  -r - Rotate column layout
-  -h - This option
-  --fg <arg> - Set foreground color. Available colors are "black", "blue", "cyan", "green", "magenta", "red", "white", "yellow".
-  --bg <arg> - Set background color. Available colors are "black", "blue", "cyan", "green", "magenta", "red", "white", "yellow".
-  --noblink - Disable blink
-  --usedelay - Add random delay time before each window starts
+var (
+	version [3]int = [3]int{0, 2, 2}
+)
 
-Commands:
+func getVersionString() string {
+	return fmt.Sprintf("%d.%d.%d", version[0], version[1], version[2])
+}
+
+func printVersion() {
+	fmt.Println(getVersionString())
+}
+
+func usage(progname string) {
+	fmt.Fprintln(os.Stderr, "Usage: "+progname+" [options] /proc/...")
+	flag.PrintDefaults()
+	fmt.Fprintln(os.Stderr, "")
+	fmt.Fprintln(os.Stderr, `Commands:
   0 - Set current position to the first line of the buffer
   $ - Set current position to the last line of the buffer
   k|UP - Scroll upward
@@ -58,7 +59,6 @@ var opt = struct {
 	showlnum  bool
 	foldline  bool
 	rotatecol bool
-	usage     bool
 	debug     bool
 	fgcolor   int16
 	bgcolor   int16
@@ -69,18 +69,19 @@ var opt = struct {
 func main() {
 	progname := path.Base(os.Args[0])
 
-	optc := flag.String("c", "", "")
-	optt := flag.Int("t", 1, "")
-	optm := flag.Bool("m", false, "")
-	optn := flag.Bool("n", false, "")
-	optf := flag.Bool("f", false, "")
-	optr := flag.Bool("r", false, "")
-	opth := flag.Bool("h", false, "")
-	optd := flag.Bool("d", false, "")
-	optfg := flag.String("fg", "", "")
-	optbg := flag.String("bg", "", "")
-	optnoblink := flag.Bool("noblink", false, "")
-	optusedelay := flag.Bool("usedelay", false, "")
+	optc := flag.String("c", "", "Set column layout. e.g. \"-c 123\" to make 3 columns with 1,2,3 windows for each")
+	optt := flag.Int("t", 1, "Set refresh interval in second. Default is 1. e.g. \"-t 5\" to refresh screen every 5 seconds")
+	optm := flag.Bool("m", false, "Take refresh interval as milli second. e.g. \"-t 500 -m\" to refresh screen every 500 milli seconds")
+	optn := flag.Bool("n", false, "Show line number")
+	optf := flag.Bool("f", false, "Fold lines when longer than window width")
+	optr := flag.Bool("r", false, "Rotate column layout")
+	opth := flag.Bool("h", false, "This option")
+	optd := flag.Bool("d", false, "Enable debug log")
+	optfg := flag.String("fg", "", "Set foreground color. Available colors are \"black\", \"blue\", \"cyan\", \"green\", \"magenta\", \"red\", \"white\", \"yellow\".")
+	optbg := flag.String("bg", "", "Set background color. Available colors are \"black\", \"blue\", \"cyan\", \"green\", \"magenta\", \"red\", \"white\", \"yellow\".")
+	optnoblink := flag.Bool("noblink", false, "Disable blink")
+	optusedelay := flag.Bool("usedelay", false, "Add random delay time before each window starts")
+	optv := flag.Bool("v", false, "Print version and exit")
 
 	flag.Parse()
 	args := flag.Args()
@@ -89,14 +90,18 @@ func main() {
 	opt.showlnum = *optn
 	opt.foldline = *optf
 	opt.rotatecol = *optr
-	opt.usage = *opth
 	opt.debug = *optd
 	opt.fgcolor = StringToColor(*optfg)
 	opt.bgcolor = StringToColor(*optbg)
 	opt.blinkline = !*optnoblink
 	opt.usedelay = *optusedelay
 
-	if opt.usage {
+	if *optv {
+		printVersion()
+		os.Exit(1)
+	}
+
+	if *opth {
 		usage(progname)
 		os.Exit(1)
 	}
@@ -227,6 +232,7 @@ func main() {
 					abs, _ := filepath.Abs(event.Name)
 					if w, ok := watch.fmap[abs]; ok {
 						w.UpdateBuffer()
+						FlashTerminal()
 					} else {
 						dbg("No such key", abs)
 					}

@@ -1,4 +1,4 @@
-procstat-go ([v0.2.1](https://github.com/kusumi/procstat-go/releases/tag/v0.2.1))
+procstat-go ([v0.2.2](https://github.com/kusumi/procstat-go/releases/tag/v0.2.2))
 ========
 
 ## About
@@ -6,8 +6,6 @@ procstat-go ([v0.2.1](https://github.com/kusumi/procstat-go/releases/tag/v0.2.1)
 + Ncurses based file monitor.
 
 + Go version of [https://github.com/kusumi/procstat/](https://github.com/kusumi/procstat/).
-
-![procstat](https://a.fsdn.com/con/app/proj/procfsv/screenshots/318601.jpg/max/max/1)
 
 ## Requirements
 
@@ -21,26 +19,29 @@ procstat-go ([v0.2.1](https://github.com/kusumi/procstat-go/releases/tag/v0.2.1)
 
     $ make
 
-or
-
-    $ gmake
-
 ## Usage
 
     $ ./procstat-go -h
     Usage: procstat-go [options] /proc/...
-    Options:
-      -c <arg> - Set column layout. e.g. "-c 123" to make 3 columns with 1,2,3 windows for each
-      -t <arg> - Set refresh interval in second. Default is 1. e.g. "-t 5" to refresh screen every 5 seconds
-      -m - Take refresh interval as milli second. e.g. "-t 500 -m" to refresh screen every 500 milli seconds
-      -n - Show line number
-      -f - Fold lines when longer than window width
-      -r - Rotate column layout
-      -h - This option
-      --fg <arg> - Set foreground color. Available colors are "black", "blue", "cyan", "green", "magenta", "red", "white", "yellow".
-      --bg <arg> - Set background color. Available colors are "black", "blue", "cyan", "green", "magenta", "red", "white", "yellow".
-      --noblink - Disable blink
-      --usedelay - Add random delay time before each window starts
+      -bg string
+            Set background color. Available colors are "black", "blue", "cyan", "green", "magenta", "red", "white", "yellow".
+      -c string
+            Set column layout. e.g. "-c 123" to make 3 columns with 1,2,3 windows for each
+      -d    Enable debug log
+      -f    Fold lines when longer than window width
+      -fg string
+            Set foreground color. Available colors are "black", "blue", "cyan", "green", "magenta", "red", "white", "yellow".
+      -h    This option
+      -m    Take refresh interval as milli second. e.g. "-t 500 -m" to refresh screen every 500 milli seconds
+      -n    Show line number
+      -noblink
+            Disable blink
+      -r    Rotate column layout
+      -t int
+            Set refresh interval in second. Default is 1. e.g. "-t 5" to refresh screen every 5 seconds (default 1)
+      -usedelay
+            Add random delay time before each window starts
+      -v    Print version and exit
     
     Commands:
       0 - Set current position to the first line of the buffer
@@ -54,9 +55,3 @@ or
       CTRL-f - Scroll one page downward
       CTRL-d - Scroll half page downward
       CTRL-l - Repaint whole screen
-
-## Resource
-
-+ Upstream [https://sourceforge.net/projects/procfsv/](https://sourceforge.net/projects/procfsv/)
-
-+ Repository [https://github.com/kusumi/procstat-go/](https://github.com/kusumi/procstat-go/)

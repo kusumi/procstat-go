@@ -47,7 +47,10 @@ func (this *Container) GotoNextWindow() {
 			return
 		}
 	}
-	Assert(len(this.bv) == 0)
+	if len(this.bv) > 0 {
+		this.cw = this.bv[0]
+		this.cw.Focus(true)
+	}
 }
 
 func (this *Container) GotoPrevWindow() {
@@ -63,7 +66,10 @@ func (this *Container) GotoPrevWindow() {
 			return
 		}
 	}
-	Assert(len(this.bv) == 0)
+	if len(this.bv) > 0 {
+		this.cw = this.bv[len(this.bv)-1]
+		this.cw.Focus(true)
+	}
 }
 
 func (this *Container) BuildWindow() {
