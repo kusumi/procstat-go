@@ -8,14 +8,14 @@ import (
 	"github.com/rthornton128/goncurses"
 )
 
-type Screen struct {
-	*goncurses.Window
+type screen struct {
+	win *goncurses.Window
 }
 
 var (
-	stdscr        Screen
-	color_attr    goncurses.Char = goncurses.A_NORMAL
-	standout_attr goncurses.Char = goncurses.A_NORMAL
+	stdscr       *goncurses.Window
+	colorAttr    goncurses.Char = goncurses.A_NORMAL
+	standoutAttr goncurses.Char = goncurses.A_NORMAL
 )
 
 const (
@@ -27,11 +27,11 @@ const (
 	KEY_RESIZE = goncurses.KEY_RESIZE
 )
 
-func KEY_CTRL(x int) int {
+func keyCtrl(x int) int {
 	return x & 0x1F
 }
 
-func StringToColor(arg string) int16 {
+func stringToColor(arg string) int16 {
 	switch arg {
 	case "black":
 		return goncurses.C_BLACK
@@ -53,12 +53,12 @@ func StringToColor(arg string) int16 {
 	return -1 // default color
 }
 
-func InitScreen(fg, bg int16) error {
+func initScreen(fg, bg int16) error {
 	scr, err := goncurses.Init()
 	if err != nil {
 		return err
 	}
-	stdscr = Screen{scr}
+	stdscr = scr
 
 	if err := goncurses.Cursor(0); err != nil {
 		return err
@@ -72,7 +72,7 @@ func InitScreen(fg, bg int16) error {
 	}
 
 	stdscr.Timeout(200)
-	ClearTerminal()
+	clearTerminal()
 
 	if goncurses.HasColors() {
 		if err := goncurses.StartColor(); err != nil {
@@ -84,44 +84,44 @@ func InitScreen(fg, bg int16) error {
 		if err := goncurses.InitPair(1, fg, bg); err != nil {
 			return err
 		}
-		color_attr = goncurses.ColorPair(1)
+		colorAttr = goncurses.ColorPair(1)
 	}
 
 	if os.Getenv("TERM") == "screen" {
-		standout_attr = goncurses.A_REVERSE
+		standoutAttr = goncurses.A_REVERSE
 	} else {
-		standout_attr = goncurses.A_STANDOUT
+		standoutAttr = goncurses.A_STANDOUT
 	}
 
 	return nil
 }
 
-func CleanupScreen() {
+func cleanupScreen() {
 	if err := goncurses.Cursor(1); err != nil {
 		return
 	}
 	goncurses.End()
 }
 
-func ReadIncoming() int {
+func readIncoming() int {
 	return int(stdscr.GetChar())
 }
 
-func ClearTerminal() {
-	GlobalLock()
+func clearTerminal() {
+	globalLock()
 	if err := stdscr.Clear(); err != nil {
 		panic(err)
 	}
-	stdscr.Window.Refresh()
-	GlobalUnlock()
+	stdscr.Refresh()
+	globalUnlock()
 }
 
-func FlashTerminal() {
+func flashTerminal() {
 	goncurses.Flash()
 }
 
-func AllocScreen(ylen, xlen, ypos, xpos int) Screen {
-	GlobalLock()
+func allocScreen(ylen, xlen, ypos, xpos int) screen {
+	globalLock()
 	scr, err := goncurses.NewWindow(ylen, xlen, ypos, xpos)
 	if err != nil {
 		panic(err)
@@ -132,69 +132,69 @@ func AllocScreen(ylen, xlen, ypos, xpos int) Screen {
 	if err := scr.Keypad(true); err != nil {
 		panic(err)
 	}
-	GlobalUnlock()
+	globalUnlock()
 
-	return Screen{scr}
+	return screen{scr}
 }
 
-func (this *Screen) Delete() {
-	GlobalLock()
-	_ = this.Window.Delete()
-	GlobalUnlock()
+func (this *screen) delete() {
+	globalLock()
+	_ = this.win.Delete()
+	globalUnlock()
 }
 
-func (this *Screen) Print(y, x int, standout bool, s string) {
-	GlobalLock()
-	attr := standout_attr
+func (this *screen) print(y, x int, standout bool, s string) {
+	globalLock()
+	attr := standoutAttr
 	if !standout {
 		attr = goncurses.A_NORMAL
 	}
-	_ = this.Window.AttrOn(attr)
-	this.Window.MovePrint(y, x, s)
-	_ = this.Window.AttrOff(attr)
-	GlobalUnlock()
+	_ = this.win.AttrOn(attr)
+	this.win.MovePrint(y, x, s)
+	_ = this.win.AttrOff(attr)
+	globalUnlock()
 }
 
-func (this *Screen) Refresh() {
-	GlobalLock()
-	this.Window.Refresh()
-	GlobalUnlock()
+func (this *screen) refresh() {
+	globalLock()
+	this.win.Refresh()
+	globalUnlock()
 }
 
-func (this *Screen) Erase() {
-	GlobalLock()
-	this.Window.Erase()
-	GlobalUnlock()
+func (this *screen) erase() {
+	globalLock()
+	this.win.Erase()
+	globalUnlock()
 }
 
-func (this *Screen) Resize(ylen, xlen int) {
-	GlobalLock()
-	this.Window.Resize(ylen, xlen)
-	GlobalUnlock()
+func (this *screen) resize(ylen, xlen int) {
+	globalLock()
+	this.win.Resize(ylen, xlen)
+	globalUnlock()
 }
 
-func (this *Screen) Move(ypos, xpos int) {
-	GlobalLock()
-	this.Window.Move(ypos, xpos)
-	GlobalUnlock()
+func (this *screen) move(ypos, xpos int) {
+	globalLock()
+	this.win.Move(ypos, xpos)
+	globalUnlock()
 }
 
-func (this *Screen) Box() {
-	GlobalLock()
-	err := this.Window.Border(goncurses.ACS_VLINE, goncurses.ACS_VLINE,
+func (this *screen) box() {
+	globalLock()
+	err := this.win.Border(goncurses.ACS_VLINE, goncurses.ACS_VLINE,
 		goncurses.ACS_HLINE, goncurses.ACS_HLINE,
 		goncurses.ACS_ULCORNER, goncurses.ACS_URCORNER,
 		goncurses.ACS_LLCORNER, goncurses.ACS_LRCORNER)
 	if err != nil {
 		panic(err)
 	}
-	GlobalUnlock()
+	globalUnlock()
 }
 
-func (this *Screen) Bkgd() {
-	GlobalLock()
-	if color_attr != goncurses.A_NORMAL {
-		this.Window.SetBackground(color_attr | ' ')
+func (this *screen) bkgd() {
+	globalLock()
+	if colorAttr != goncurses.A_NORMAL {
+		this.win.SetBackground(colorAttr | ' ')
 	}
-	GlobalUnlock()
+	globalUnlock()
 }

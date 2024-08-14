@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	version [3]int = [3]int{0, 2, 2}
+	version [3]int = [3]int{0, 2, 3}
 )
 
 func getVersionString() string {
@@ -47,9 +47,9 @@ func usage(progname string) {
   CTRL-l - Repaint whole screen`)
 }
 
-type Watch struct {
+type watch struct {
 	watcher *fsnotify.Watcher
-	fmap    map[string]*Window
+	fmap    map[string]*window
 }
 
 var opt = struct {
@@ -69,16 +69,21 @@ var opt = struct {
 func main() {
 	progname := path.Base(os.Args[0])
 
-	optc := flag.String("c", "", "Set column layout. e.g. \"-c 123\" to make 3 columns with 1,2,3 windows for each")
-	optt := flag.Int("t", 1, "Set refresh interval in second. Default is 1. e.g. \"-t 5\" to refresh screen every 5 seconds")
-	optm := flag.Bool("m", false, "Take refresh interval as milli second. e.g. \"-t 500 -m\" to refresh screen every 500 milli seconds")
+	optc := flag.String("c", "", "Set column layout. "+
+		"e.g. \"-c 123\" to make 3 columns with 1,2,3 windows for each")
+	optt := flag.Int("t", 1, "Set refresh interval in second. Default is 1. "+
+		"e.g. \"-t 5\" to refresh screen every 5 seconds")
+	optm := flag.Bool("m", false, "Take refresh interval as milli second. "+
+		"e.g. \"-t 500 -m\" to refresh screen every 500 milli seconds")
 	optn := flag.Bool("n", false, "Show line number")
 	optf := flag.Bool("f", false, "Fold lines when longer than window width")
 	optr := flag.Bool("r", false, "Rotate column layout")
 	opth := flag.Bool("h", false, "This option")
 	optd := flag.Bool("d", false, "Enable debug log")
-	optfg := flag.String("fg", "", "Set foreground color. Available colors are \"black\", \"blue\", \"cyan\", \"green\", \"magenta\", \"red\", \"white\", \"yellow\".")
-	optbg := flag.String("bg", "", "Set background color. Available colors are \"black\", \"blue\", \"cyan\", \"green\", \"magenta\", \"red\", \"white\", \"yellow\".")
+	optfg := flag.String("fg", "", "Set foreground color. Available colors are "+
+		"\"black\", \"blue\", \"cyan\", \"green\", \"magenta\", \"red\", \"white\", \"yellow\".")
+	optbg := flag.String("bg", "", "Set background color. Available colors are "+
+		"\"black\", \"blue\", \"cyan\", \"green\", \"magenta\", \"red\", \"white\", \"yellow\".")
 	optnoblink := flag.Bool("noblink", false, "Disable blink")
 	optusedelay := flag.Bool("usedelay", false, "Add random delay time before each window starts")
 	optv := flag.Bool("v", false, "Print version and exit")
@@ -91,8 +96,8 @@ func main() {
 	opt.foldline = *optf
 	opt.rotatecol = *optr
 	opt.debug = *optd
-	opt.fgcolor = StringToColor(*optfg)
-	opt.bgcolor = StringToColor(*optbg)
+	opt.fgcolor = stringToColor(*optfg)
+	opt.bgcolor = stringToColor(*optbg)
 	opt.blinkline = !*optnoblink
 	opt.usedelay = *optusedelay
 
@@ -111,7 +116,7 @@ func main() {
 		opt.sinterval /= 1000
 		opt.minterval = x % 1000
 	}
-	t := GetSecond(opt.sinterval) + GetMillisecond(opt.minterval)
+	t := getSecond(opt.sinterval) + getMillisecond(opt.minterval)
 
 	if *optc == "" {
 		*optc = strings.Repeat("1", len(args))
@@ -132,20 +137,20 @@ func main() {
 		}
 	}
 
-	if _, errno := GetTerminalInfo(); errno != 0 {
+	if _, errno := getTerminalInfo(); errno != 0 {
 		fmt.Fprintln(os.Stderr, "Failed to get terminal info,", errno)
 		os.Exit(1)
 	}
 
-	defer CleanupLock()
-	InitLock()
-	defer CleanupLog()
-	if err := InitLog(); err != nil {
+	defer cleanupLock()
+	initLock()
+	defer cleanupLog()
+	if err := initLog(progname); err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to init log,", err)
 		os.Exit(1)
 	}
-	defer CleanupScreen()
-	if err := InitScreen(opt.fgcolor, opt.bgcolor); err != nil {
+	defer cleanupScreen()
+	if err := initScreen(opt.fgcolor, opt.bgcolor); err != nil {
 		fmt.Fprintln(os.Stderr, "Failed to init screen,", err)
 		os.Exit(1)
 	}
@@ -156,18 +161,19 @@ func main() {
 		os.Exit(1)
 	}
 	defer watcher.Close()
-	watch := Watch{watcher, make(map[string]*Window)}
+	watch := watch{watcher, make(map[string]*window)}
 
 	dbg(os.Args)
 	dbgf("%#v", opt)
 
-	co := Container{}
-	co.Init(args, &watch)
+	co := container{}
+	co.init(args, &watch)
 	dbg(watch.fmap)
+	defer co.cleanup()
 
-	sigint_ch := make(chan int)
-	sigwinch_ch := make(chan int)
-	exit_ch := make(chan int)
+	sigintCh := make(chan int)
+	sigwinchCh := make(chan int)
+	exitCh := make(chan int)
 
 	var wg sync.WaitGroup
 
@@ -179,16 +185,16 @@ func main() {
 		signal.Notify(ch, syscall.SIGINT, syscall.SIGWINCH)
 		for {
 			select {
-			case <-exit_ch:
+			case <-exitCh:
 				dbgf("signal=%p exit", ch)
 				return
 			case s := <-ch:
 				dbg("signal,", s)
 				switch s {
 				case syscall.SIGINT:
-					sigint_ch <- 1
+					sigintCh <- 1
 				case syscall.SIGWINCH:
-					sigwinch_ch <- 1
+					sigwinchCh <- 1
 				}
 			}
 		}
@@ -200,15 +206,15 @@ func main() {
 		defer wg.Done()
 		for {
 			select {
-			case <-exit_ch:
+			case <-exitCh:
 				dbgf("co=%p exit", co)
 				return
-			case <-sigwinch_ch:
-				co.ParseEvent(KEY_RESIZE)
+			case <-sigwinchCh:
+				co.parseEvent(KEY_RESIZE)
 			default:
-				if co.ParseEvent(ReadIncoming()) == -1 {
+				if co.parseEvent(readIncoming()) == -1 {
 					dbg("quit")
-					sigint_ch <- 1
+					sigintCh <- 1
 				}
 			}
 		}
@@ -220,7 +226,7 @@ func main() {
 		defer wg.Done()
 		for {
 			select {
-			case <-exit_ch:
+			case <-exitCh:
 				dbgf("watch=%p exit", watch)
 				return
 			case event, ok := <-watcher.Events:
@@ -231,8 +237,8 @@ func main() {
 				if event.Op&fsnotify.Write == fsnotify.Write {
 					abs, _ := filepath.Abs(event.Name)
 					if w, ok := watch.fmap[abs]; ok {
-						w.UpdateBuffer()
-						FlashTerminal()
+						w.updateBuffer()
+						flashTerminal()
 					} else {
 						dbg("No such key", abs)
 					}
@@ -249,30 +255,30 @@ func main() {
 	// window goroutines
 	for _, w := range co.v {
 		wg.Add(1)
-		go func(w *Window) {
+		go func(w *window) {
 			defer wg.Done()
-			w.Repaint()
+			w.repaint()
 			d := t
 			if opt.usedelay {
-				d = GetMillisecond(rand.Intn(1000))
+				d = getMillisecond(rand.Intn(1000))
 			}
 			for {
 				select {
-				case <-exit_ch:
+				case <-exitCh:
 					dbgf("window=%p exit", w)
 					return
-				case <-w.sig_ch:
-					w.Repaint()
+				case <-w.sigCh:
+					w.repaint()
 				case <-time.After(d):
-					w.Repaint()
+					w.repaint()
 				}
 				d = t
 			}
 		}(w)
 	}
 
-	<-sigint_ch
-	close(exit_ch)
+	<-sigintCh
+	close(exitCh)
 
 	wg.Wait()
 }

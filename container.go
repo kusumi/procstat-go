@@ -6,17 +6,17 @@ import (
 	"path/filepath"
 )
 
-type Container struct {
-	v, bv []*Window
-	cw    *Window
+type container struct {
+	v, bv []*window
+	cw    *window
 }
 
-func (this *Container) Init(args []string, watch *Watch) {
-	this.BuildWindow()
+func (this *container) init(args []string, watch *watch) {
+	this.buildWindow()
 	for i, f := range args {
 		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() {
 			if i < len(this.v) {
-				this.v[i].AttachBuffer(f)
+				this.v[i].attachBuffer(f)
 				this.bv = append(this.bv, this.v[i])
 
 				abs, _ := filepath.Abs(f)
@@ -29,13 +29,19 @@ func (this *Container) Init(args []string, watch *Watch) {
 		}
 	}
 
-	Assert(len(this.v) > 0)
+	assert(len(this.v) > 0)
 	this.cw = this.v[0]
-	this.cw.Focus(true)
+	this.cw.focus(true)
 }
 
-func (this *Container) GotoNextWindow() {
-	this.cw.Focus(false)
+func (this *container) cleanup() {
+	for _, w := range this.v {
+		w.cleanup()
+	}
+}
+
+func (this *container) gotoNextWindow() {
+	this.cw.focus(false)
 	for i, w := range this.bv {
 		if w == this.cw {
 			if i == len(this.bv)-1 {
@@ -43,18 +49,18 @@ func (this *Container) GotoNextWindow() {
 			} else {
 				this.cw = this.bv[i+1]
 			}
-			this.cw.Focus(true)
+			this.cw.focus(true)
 			return
 		}
 	}
 	if len(this.bv) > 0 {
 		this.cw = this.bv[0]
-		this.cw.Focus(true)
+		this.cw.focus(true)
 	}
 }
 
-func (this *Container) GotoPrevWindow() {
-	this.cw.Focus(false)
+func (this *container) gotoPrevWindow() {
+	this.cw.focus(false)
 	for i, w := range this.bv {
 		if w == this.cw {
 			if i == 0 {
@@ -62,28 +68,28 @@ func (this *Container) GotoPrevWindow() {
 			} else {
 				this.cw = this.bv[i-1]
 			}
-			this.cw.Focus(true)
+			this.cw.focus(true)
 			return
 		}
 	}
 	if len(this.bv) > 0 {
 		this.cw = this.bv[len(this.bv)-1]
-		this.cw.Focus(true)
+		this.cw.focus(true)
 	}
 }
 
-func (this *Container) BuildWindow() {
+func (this *container) buildWindow() {
 	if !opt.rotatecol {
-		this.BuildWindowXY()
+		this.buildWindowXY()
 	} else {
-		this.BuildWindowYX()
+		this.buildWindowYX()
 	}
 }
 
-func (this *Container) BuildWindowXY() {
+func (this *container) buildWindowXY() {
 	seq := 0
-	xx := GetTerminalCols()
-	yy := GetTerminalLines()
+	xx := getTerminalCols()
+	yy := getTerminalLines()
 	x := len(opt.layout)
 	xq := xx / x
 	xr := xx % x
@@ -107,16 +113,16 @@ func (this *Container) BuildWindowXY() {
 			if j == y-1 {
 				ylen += yr
 			}
-			this.AllocWindow(seq, ylen, xlen, ypos, xpos)
+			this.allocWindow(seq, ylen, xlen, ypos, xpos)
 			seq++
 		}
 	}
 }
 
-func (this *Container) BuildWindowYX() {
+func (this *container) buildWindowYX() {
 	seq := 0
-	yy := GetTerminalLines()
-	xx := GetTerminalCols()
+	yy := getTerminalLines()
+	xx := getTerminalCols()
 	y := len(opt.layout)
 	yq := yy / y
 	yr := yy % y
@@ -140,62 +146,62 @@ func (this *Container) BuildWindowYX() {
 			if j == x-1 {
 				xlen += xr
 			}
-			this.AllocWindow(seq, ylen, xlen, ypos, xpos)
+			this.allocWindow(seq, ylen, xlen, ypos, xpos)
 			seq++
 		}
 	}
 }
 
-func (this *Container) AllocWindow(seq, ylen, xlen, ypos, xpos int) {
+func (this *container) allocWindow(seq, ylen, xlen, ypos, xpos int) {
 	s := fmt.Sprintf("#%d %d %d %d %d", seq, ylen, xlen, ypos, xpos)
 	if len(this.v) > seq {
 		w := this.v[seq]
-		w.Resize(ylen, xlen, ypos, xpos)
+		w.resize(ylen, xlen, ypos, xpos)
 		dbgf("window=%p resize %s", w, s)
 	} else {
-		w := &Window{}
-		w.Init(ylen, xlen, ypos, xpos)
+		w := &window{}
+		w.init(ylen, xlen, ypos, xpos)
 		this.v = append(this.v, w)
-		Assert(this.v[seq] == w)
+		assert(this.v[seq] == w)
 		dbgf("window=%p alloc %s", w, s)
 	}
 }
 
-func (this *Container) ParseEvent(x int) int {
+func (this *container) parseEvent(x int) int {
 	switch x {
 	case KEY_ERR:
 		dbg("KEY_ERR")
-	case KEY_RESIZE, KEY_CTRL('l'):
-		ClearTerminal()
-		this.BuildWindow()
+	case KEY_RESIZE, keyCtrl('l'):
+		clearTerminal()
+		this.buildWindow()
 	case KEY_LEFT, 'h':
-		this.GotoPrevWindow()
+		this.gotoPrevWindow()
 	case KEY_RIGHT, 'l':
-		this.GotoNextWindow()
+		this.gotoNextWindow()
 	case '0':
-		this.cw.GotoHead()
-		this.cw.Signal()
+		this.cw.gotoHead()
+		this.cw.signal()
 	case '$':
-		this.cw.GotoTail()
-		this.cw.Signal()
+		this.cw.gotoTail()
+		this.cw.signal()
 	case KEY_UP, 'k':
-		this.cw.GotoCurrent(-1)
-		this.cw.Signal()
+		this.cw.gotoCurrent(-1)
+		this.cw.signal()
 	case KEY_DOWN, 'j':
-		this.cw.GotoCurrent(1)
-		this.cw.Signal()
-	case KEY_CTRL('B'):
-		this.cw.GotoCurrent(-GetTerminalLines())
-		this.cw.Signal()
-	case KEY_CTRL('U'):
-		this.cw.GotoCurrent(-GetTerminalLines() / 2)
-		this.cw.Signal()
-	case KEY_CTRL('F'):
-		this.cw.GotoCurrent(GetTerminalLines())
-		this.cw.Signal()
-	case KEY_CTRL('D'):
-		this.cw.GotoCurrent(GetTerminalLines() / 2)
-		this.cw.Signal()
+		this.cw.gotoCurrent(1)
+		this.cw.signal()
+	case keyCtrl('B'):
+		this.cw.gotoCurrent(-getTerminalLines())
+		this.cw.signal()
+	case keyCtrl('U'):
+		this.cw.gotoCurrent(-getTerminalLines() / 2)
+		this.cw.signal()
+	case keyCtrl('F'):
+		this.cw.gotoCurrent(getTerminalLines())
+		this.cw.signal()
+	case keyCtrl('D'):
+		this.cw.gotoCurrent(getTerminalLines() / 2)
+		this.cw.signal()
 	}
 
 	return 0

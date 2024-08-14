@@ -13,7 +13,7 @@ var (
 	lfd   *os.File
 )
 
-func InitLog() error {
+func initLog(progname string) error {
 	if !opt.debug {
 		return nil
 	}
@@ -23,7 +23,7 @@ func InitLog() error {
 		return err
 	}
 
-	f := path.Join(u.HomeDir, ".procstat.log")
+	f := path.Join(u.HomeDir, "."+progname+".log")
 	lfd, err := os.OpenFile(f, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func InitLog() error {
 	return nil
 }
 
-func CleanupLog() {
+func cleanupLog() {
 	if !opt.debug {
 		return
 	}
@@ -53,10 +53,10 @@ func dbg(args ...interface{}) {
 		return
 	}
 
-	Assert(linit)
-	GlobalLock()
+	assert(linit)
+	globalLock()
 	log.Println(args...)
-	GlobalUnlock()
+	globalUnlock()
 }
 
 func dbgf(f string, args ...interface{}) {
@@ -64,8 +64,8 @@ func dbgf(f string, args ...interface{}) {
 		return
 	}
 
-	Assert(linit)
-	GlobalLock()
+	assert(linit)
+	globalLock()
 	log.Printf(f, args...)
-	GlobalUnlock()
+	globalUnlock()
 }

@@ -7,69 +7,69 @@ import (
 	"time"
 )
 
-type Screen struct {
+type screen struct {
 }
 
 const (
-	KEY_ERR    = -1
-	KEY_UP     = 1
-	KEY_DOWN   = 2
-	KEY_LEFT   = 3
-	KEY_RIGHT  = 4
-	KEY_RESIZE = 5
+	KEY_ERR    = 0xDEAD
+	KEY_UP     = KEY_ERR + 1
+	KEY_DOWN   = KEY_ERR + 2
+	KEY_LEFT   = KEY_ERR + 3
+	KEY_RIGHT  = KEY_ERR + 4
+	KEY_RESIZE = KEY_ERR + 5
 )
 
-func KEY_CTRL(x int) int {
+func keyCtrl(x int) int {
 	return x & 0x1F
 }
 
-func StringToColor(arg string) int16 {
+func stringToColor(arg string) int16 {
 	return -1
 }
 
-func InitScreen(fg, bg int16) error {
+func initScreen(fg, bg int16) error {
 	return nil
 }
 
-func CleanupScreen() {
+func cleanupScreen() {
 }
 
-func ReadIncoming() int {
+func readIncoming() int {
 	time.Sleep(200 * time.Millisecond)
 	return 0
 }
 
-func ClearTerminal() {
+func clearTerminal() {
 }
 
-func FlashTerminal() {
+func flashTerminal() {
 }
 
-func AllocScreen(ylen, xlen, ypos, xpos int) Screen {
-	return Screen{}
+func allocScreen(ylen, xlen, ypos, xpos int) screen {
+	return screen{}
 }
 
-func (this *Screen) Delete() {
+func (this *screen) delete() {
 }
 
-func (this *Screen) Print(y, x int, standout bool, s string) {
+func (this *screen) print(y, x int, standout bool, s string) {
 	fmt.Println(s)
 }
 
-func (this *Screen) Refresh() {
+func (this *screen) refresh() {
 }
 
-func (this *Screen) Erase() {
+func (this *screen) erase() {
 }
 
-func (this *Screen) Resize(ylen, xlen int) {
+func (this *screen) resize(ylen, xlen int) {
 }
 
-func (this *Screen) Move(ypos, xpos int) {
+func (this *screen) move(ypos, xpos int) {
 }
 
-func (this *Screen) Box() {
+func (this *screen) box() {
 }
 
-func (this *Screen) Bkgd() {
+func (this *screen) bkgd() {
 }

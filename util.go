@@ -6,32 +6,32 @@ import (
 	"unsafe"
 )
 
-var gl_ch = make(chan int, 1)
+var globalCh = make(chan int, 1)
 
-func InitLock() {
-	gl_ch <- 1
+func initLock() {
+	globalCh <- 1
 }
 
-func CleanupLock() {
-	close(gl_ch)
+func cleanupLock() {
+	close(globalCh)
 }
 
-func GlobalLock() {
-	<-gl_ch
+func globalLock() {
+	<-globalCh
 }
 
-func GlobalUnlock() {
-	gl_ch <- 1
+func globalUnlock() {
+	globalCh <- 1
 }
 
 type winsize struct {
-	ws_row    uint16
-	ws_col    uint16
-	ws_xpixel uint16
-	ws_ypixel uint16
+	wsRow    uint16
+	wsCol    uint16
+	wsXpixel uint16
+	wsYpixel uint16
 }
 
-func GetTerminalInfo() (*winsize, syscall.Errno) {
+func getTerminalInfo() (*winsize, syscall.Errno) {
 	ws := &winsize{}
 	ret, _, errno := syscall.Syscall(syscall.SYS_IOCTL,
 		uintptr(syscall.Stdin),
@@ -45,12 +45,12 @@ func GetTerminalInfo() (*winsize, syscall.Errno) {
 	return ws, 0
 }
 
-func GetTerminalLines() int {
-	GlobalLock()
-	ws, errno := GetTerminalInfo()
-	GlobalUnlock()
+func getTerminalLines() int {
+	globalLock()
+	ws, errno := getTerminalInfo()
+	globalUnlock()
 
-	ret := ws.ws_row
+	ret := ws.wsRow
 	dbg("LINES", ret, errno)
 	if errno != 0 {
 		panic(errno)
@@ -59,12 +59,12 @@ func GetTerminalLines() int {
 	return int(ret)
 }
 
-func GetTerminalCols() int {
-	GlobalLock()
-	ws, errno := GetTerminalInfo()
-	GlobalUnlock()
+func getTerminalCols() int {
+	globalLock()
+	ws, errno := getTerminalInfo()
+	globalUnlock()
 
-	ret := ws.ws_col
+	ret := ws.wsCol
 	dbg("COLS", ret, errno)
 	if errno != 0 {
 		panic(errno)
@@ -73,19 +73,19 @@ func GetTerminalCols() int {
 	return int(ret)
 }
 
-func GetSecond(t int) time.Duration {
+func getSecond(t int) time.Duration {
 	return time.Duration(t) * time.Second
 }
 
-func GetMillisecond(t int) time.Duration {
+func getMillisecond(t int) time.Duration {
 	return time.Duration(t) * time.Millisecond
 }
 
-func Assert(c bool) {
-	Kassert(c, "Assert failed")
+func assert(c bool) {
+	kassert(c, "Assert failed")
 }
 
-func Kassert(c bool, err interface{}) {
+func kassert(c bool, err interface{}) {
 	if !c {
 		panic(err)
 	}

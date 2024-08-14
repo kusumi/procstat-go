@@ -1,16 +1,15 @@
-all:
-	go build -o procstat-go
-stdout:
-	go build -o procstat-go -tags stdout
-fmt:
-	go fmt
+bin1:
+	go build
+bin2:
+	go build -tags stdout
 clean:
 	go clean
-
-lint:
+fmt:
+	go fmt
+lint1:
 	golangci-lint run
-lint-stdout:
+lint2:
 	golangci-lint run --build-tags stdout
 
-xxx1:	fmt lint
-xxx2:	fmt lint-stdout
+xxx1:	fmt lint1
+xxx2:	fmt lint2

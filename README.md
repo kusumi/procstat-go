@@ -1,4 +1,4 @@
-procstat-go ([v0.2.2](https://github.com/kusumi/procstat-go/releases/tag/v0.2.2))
+procstat-go ([v0.2.3](https://github.com/kusumi/procstat-go/releases/tag/v0.2.3))
 ========
 
 ## About
@@ -9,11 +9,7 @@ procstat-go ([v0.2.2](https://github.com/kusumi/procstat-go/releases/tag/v0.2.2)
 
 ## Requirements
 
-+ go 1.18 or above
-
-+ github.com/rthornton128/goncurses
-
-+ github.com/fsnotify/fsnotify
+go 1.18 or above
 
 ## Build
 

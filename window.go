@@ -4,134 +4,139 @@ import (
 	"strconv"
 )
 
-type Window struct {
-	frame  Frame
-	panel  Panel
-	buffer Buffer
+type window struct {
+	frame
+	panel
+	buffer
 	offset int
-	sig_ch chan int
-	mtx_ch chan int
+	sigCh  chan int
+	mtxCh  chan int
 }
 
-func (this *Window) Init(ylen, xlen, ypos, xpos int) {
-	this.frame.Init(ylen, xlen, ypos, xpos)
-	this.panel.Init(ylen-2, xlen-2, ypos+1, xpos+1)
-	this.frame.Refresh()
-	this.panel.Refresh()
+func (this *window) init(ylen, xlen, ypos, xpos int) {
+	this.frame.init(ylen, xlen, ypos, xpos)
+	this.panel.init(ylen-2, xlen-2, ypos+1, xpos+1)
+	this.frame.refresh()
+	this.panel.refresh()
 
 	this.offset = 0
-	this.sig_ch = make(chan int)
-	this.mtx_ch = make(chan int, 1)
-	this.mtx_ch <- 1
+	this.sigCh = make(chan int)
+	this.mtxCh = make(chan int, 1)
+	this.mtxCh <- 1
 }
 
-func (this *Window) Signal() {
-	this.sig_ch <- 1
+func (this *window) cleanup() {
+	this.frame.cleanup()
+	this.panel.cleanup()
 }
 
-func (this *Window) Lock() {
-	<-this.mtx_ch
+func (this *window) signal() {
+	this.sigCh <- 1
 }
 
-func (this *Window) Unlock() {
-	this.mtx_ch <- 1
+func (this *window) lock() {
+	<-this.mtxCh
 }
 
-func (this *Window) IsDead() bool {
-	return this.buffer.IsDead()
+func (this *window) unlock() {
+	this.mtxCh <- 1
 }
 
-func (this *Window) Resize(ylen, xlen, ypos, xpos int) {
-	this.Lock()
-	this.frame.Resize(ylen, xlen, ypos, xpos)
-	this.panel.Resize(ylen-2, xlen-2, ypos+1, xpos+1)
-	this.Unlock()
+func (this *window) isDead() bool {
+	return this.buffer.isDead()
 }
 
-func (this *Window) AttachBuffer(f string) {
-	this.Lock()
+func (this *window) resize(ylen, xlen, ypos, xpos int) {
+	this.lock()
+	this.frame.resize(ylen, xlen, ypos, xpos)
+	this.panel.resize(ylen-2, xlen-2, ypos+1, xpos+1)
+	this.unlock()
+}
+
+func (this *window) attachBuffer(f string) {
+	this.lock()
 	if this.buffer.fd != nil {
-		this.Unlock()
+		this.unlock()
 		return
 	}
-	this.frame.SetTitle(f)
-	this.panel.SetTitle(f)
+	this.frame.setTitle(f)
+	this.panel.setTitle(f)
 
-	this.buffer.Init(f)
+	this.buffer.init(f)
 	dbgf("window=%p path=%s", this, this.buffer.f)
-	this.Unlock()
+	this.unlock()
 }
 
-func (this *Window) UpdateBuffer() {
+func (this *window) updateBuffer() {
 	dbgf("window=%p path=%s", this, this.buffer.f)
-	this.buffer.Update()
+	this.buffer.update()
 }
 
-func (this *Window) Focus(t bool) {
-	this.Lock()
-	this.frame.SetFocus(t)
-	this.panel.SetFocus(t)
-	this.Unlock()
+func (this *window) focus(t bool) {
+	this.lock()
+	this.frame.setFocus(t)
+	this.panel.setFocus(t)
+	this.unlock()
 }
 
-func (this *Window) GotoHead() {
-	this.Lock()
+func (this *window) gotoHead() {
+	this.lock()
 	this.offset = 0
-	this.Unlock()
+	this.unlock()
 }
 
-func (this *Window) GotoTail() {
-	this.Lock()
-	this.offset = this.buffer.GetMaxLine()
-	this.Unlock()
+func (this *window) gotoTail() {
+	this.lock()
+	this.offset = this.buffer.getMaxLine()
+	this.unlock()
 }
 
-func (this *Window) GotoCurrent(d int) {
-	this.Lock()
+func (this *window) gotoCurrent(d int) {
+	this.lock()
 	x := this.offset + d
 	if x < 0 {
 		x = 0
-	} else if x > this.buffer.GetMaxLine() {
-		x = this.buffer.GetMaxLine()
+	} else if x > this.buffer.getMaxLine() {
+		x = this.buffer.getMaxLine()
 	}
 	this.offset = x
-	this.Unlock()
+	this.unlock()
 }
 
-func (this *Window) Repaint() {
-	if this.IsDead() {
+func (this *window) repaint() {
+	if this.isDead() {
 		return
 	}
 
-	l, err := this.buffer.ReadLines()
+	l, err := this.buffer.readLines()
 	if err != nil {
-		this.panel.Erase()
-		this.panel.Print(0, 0, false, err.Error())
-		this.panel.Refresh()
-		this.buffer.Clear()
-		this.buffer.SaveLines([]string{})
+		this.panel.erase()
+		this.panel.print(0, 0, false, err.Error())
+		this.panel.refresh()
+		this.buffer.clear()
+		this.buffer.saveLines([]string{})
 		return
 	}
 	pl := this.buffer.prev
 	y := 0
 
-	this.Lock()
+	this.lock()
 	offset := this.offset
 	ylen := this.panel.ylen
 	xlen := this.panel.xlen
-	this.Unlock()
+	this.unlock()
 
-	this.buffer.BlockTillReady()
-	this.panel.Erase()
+	this.buffer.blockTillReady()
+	this.panel.erase()
 
 	for i, s := range l {
-		this.Lock()
+		this.lock()
 		if y >= this.panel.ylen || offset != this.offset ||
 			ylen != this.panel.ylen || xlen != this.panel.xlen {
-			this.Unlock()
+			this.unlock()
 			break
 		}
-		this.Unlock()
+		this.unlock()
 		if i < offset {
 			continue
 		}
@@ -147,7 +152,7 @@ func (this *Window) Repaint() {
 		if !opt.foldline && len(s) > xlen {
 			s = s[:xlen]
 		}
-		this.panel.Print(y, 0, standout, s)
+		this.panel.print(y, 0, standout, s)
 		if !opt.foldline {
 			y++
 		} else {
@@ -159,8 +164,8 @@ func (this *Window) Repaint() {
 		}
 	}
 
-	this.panel.Refresh()
-	this.buffer.Clear()
-	this.buffer.SaveLines(l)
-	this.buffer.SignalBlocked()
+	this.panel.refresh()
+	this.buffer.clear()
+	this.buffer.saveLines(l)
+	this.buffer.signalBlocked()
 }
